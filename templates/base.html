@@ -1,35 +1,33 @@
-{% extends 'bootstrap/base.html' %}
+{%extends "bootstrap/base.html" %}
 
+{% block title%}Flasky {% endblock %}
 {% block head %}
 {{ super() }}
+
 <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
 {% endblock %}
+{% block navbar%}
 
-{% block title %}Flasky{% endblock %}
-
-{% block navbar %}
-<nav class="navbar navbar-inverse" role="navigation">
+<nav class="navbar navbar-inverse navbar-expand-lg">
     <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbarNav">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a href="/" class="navbar-brand">Flasky</b></a>
-        </div>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="nav navbar-nav">
-                <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
-                <li class="nav-item"><a href="/user/Maria%20Eduarda/PT3025594/IFSP" class="nav-link">Identificação</a></li>
-                <li class="nav-item"><a href="/contextorequisicao/Fernanda%20Barbalho" class="nav-link">Contexto da requisição</a></li>
-            </ul>
-        </div>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+    </button>
+    <a href="/" class="navbar-brand">Avaliação Contínua: <strong>Aula 050</strong></a>
+      <div class="collapse navbar-collapse">
+
+  <ul class="nav navbar-nav">
+    <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+  </ul>
+</div>
     </div>
+
 </nav>
 {% endblock %}
-
 {% block scripts %}
 {{ super() }}
 {{ moment.include_moment() }}
