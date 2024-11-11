@@ -1,51 +1,80 @@
-from __future__ import print_function
-from flask import Flask, request, render_template, session, redirect, url_for, flash
+import os
+from flask import Flask, render_template, session, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
-from datetime import datetime
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField
+from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
-import sys
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'hard to guess string'
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+    'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 bootstrap = Bootstrap(app)
 moment = Moment(app)
-app.config['SECRET_KEY'] = 'Chave Secreta'
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    users = db.relationship('User', backref='role', lazy='dynamic')
+
+    def __repr__(self):
+        return '<Role %r>' % self.name
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
 
 class NameForm(FlaskForm):
-    name = StringField('Informe o seu nome:', validators=[DataRequired()])
-    last_name = StringField('Informe o seu sobrenome:', validators=[DataRequired()])
-    institution = StringField('Informe a sua instituição de ensino:', validators=[DataRequired()])
-    subject = SelectField('Informe a sua disciplina:', choices=["DSWA5", "DWBA4", "Gestão de Projetos"], validators=[DataRequired()])
+    name = StringField('What is your name?', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
-@app.route('/', methods=['GET', 'POST'])
-def hello_world():
-   now = datetime.utcnow()
-   form = NameForm()
-   ip = None
-   host = None
-  
-   if form.validate_on_submit():
-       print(form.subject.data, file=sys.stderr)
-       old_name = session.get('name')
-       if old_name is not None and old_name != form.name.data:
-           flash('Você alterou o seu nome!')
-       session['name'] = form.name.data
-       session['institution'] = form.institution.data
-       session['subject'] = form.subject.data
 
-       form.name.data = ''
-       ip = request.remote_addr
-       host = request.host
-   return render_template('index.html', current_time=now, form=form, name=session.get('name'), ip=ip, host=host, institution=session.get('institution'), subject=session.get('subject'))
+@app.shell_context_processor
+def make_shell_context():
+    return dict(db=db, User=User, Role=Role)
 
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
+
 @app.errorhandler(500)
-def page_internal_server_error(e):
+def internal_server_error(e):
     return render_template('500.html'), 500
+
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    form = NameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username=form.name.data)
+            db.session.add(user)
+            db.session.commit()
+            session['known'] = False
+        else:
+            session['known'] = True
+        session['name'] = form.name.data
+        return redirect(url_for('index'))
+    return render_template('index.html', form=form, name=session.get('name'),
+                           known=session.get('known', False))
