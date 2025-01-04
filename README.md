@@ -7,3 +7,7 @@
 -> Templates
 
 -> Formulários Web
+
+-> E-mail
+
+-> Estrutura da aplicação
